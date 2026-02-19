@@ -110,11 +110,12 @@ class TestStreamingExceptionHandling:
         ):
             events = await _collect_stream(provider, request)
 
-        # Should have message_start, error text block, close blocks, message_delta, message_stop
+        # Should have message_start, error text block, close blocks, message_delta, message_stop, done
         event_text = "".join(events)
         assert "message_start" in event_text
         assert "API failed" in event_text
         assert "message_stop" in event_text
+        assert "[DONE]" in event_text
 
     @pytest.mark.asyncio
     async def test_error_after_partial_content(self):
@@ -433,6 +434,7 @@ class TestStreamChunkEdgeCases:
         event_text = "".join(events)
         assert "message_start" in event_text
         assert "message_stop" in event_text
+        assert "[DONE]" in event_text
 
     @pytest.mark.asyncio
     async def test_stream_chunk_with_none_delta_handled(self):
@@ -469,10 +471,11 @@ class TestStreamChunkEdgeCases:
         event_text = "".join(events)
         assert "message_start" in event_text
         assert "message_stop" in event_text
+        assert "[DONE]" in event_text
 
     @pytest.mark.asyncio
     async def test_stream_generator_cleanup_on_exception(self):
-        """When stream raises mid-iteration, message_stop still emitted."""
+        """When stream raises mid-iteration, message_stop and [DONE] still emitted."""
         provider = _make_provider()
         request = _make_request()
 
@@ -501,6 +504,7 @@ class TestStreamChunkEdgeCases:
         assert "Partial" in event_text
         assert "Connection reset" in event_text
         assert "message_stop" in event_text
+        assert "[DONE]" in event_text
 
     def test_stream_malformed_tool_args_chunked(self):
         """Chunked tool args that never form valid JSON are flushed with {}."""
